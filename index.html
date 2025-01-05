@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Website với Chatbot Tự động</title>
+    <style>
+      /* Base Reset */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f5f5;
+      }
+
+      /* Enhanced Chat Button */
+      .chat-button {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(145deg, #54a0ff, #2e86de);
+        border-radius: 50%;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        z-index: 1000;
+        border: none;
+        will-change: transform, box-shadow;
+      }
+
+      /* Optimized Pulse Animation */
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.6);
+        }
+        70% {
+          box-shadow: 0 0 0 15px rgba(74, 144, 226, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(74, 144, 226, 0);
+        }
+      }
+
+      .chat-button {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      .chat-button:hover {
+        transform: scale(1.1) rotate(15deg);
+        background: linear-gradient(145deg, #2e86de, #54a0ff);
+      }
+
+      /* Enhanced Container */
+      .chat-container {
+        position: fixed;
+        bottom: 100px;
+        right: 25px;
+        width: 350px;
+        height: 500px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(20px) scale(0.95);
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        will-change: transform, opacity;
+      }
+
+      .chat-container.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+      }
+
+      /* New Close Button Style */
+      .chat-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+
+      .chat-close::before,
+      .chat-close::after {
+        content: "";
+        position: absolute;
+        width: 12px;
+        height: 2px;
+        background: white;
+        transition: all 0.3s ease;
+      }
+
+      .chat-close::before {
+        transform: rotate(45deg);
+      }
+
+      .chat-close::after {
+        transform: rotate(-45deg);
+      }
+
+      .chat-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(90deg);
+      }
+
+      /* Enhanced Header */
+      .chat-header {
+        background: linear-gradient(135deg, #4a90e2, #357abd);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Improved Shine Effect */
+      @keyframes shine {
+        from {
+          transform: translateX(-100%) rotate(45deg);
+        }
+        to {
+          transform: translateX(200%) rotate(45deg);
+        }
+      }
+
+      .chat-header::after {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+          45deg,
+          transparent 45%,
+          rgba(255, 255, 255, 0.1) 50%,
+          transparent 55%
+        );
+        animation: shine 3s infinite;
+      }
+
+      /* Enhanced Online Indicator */
+      .online-indicator {
+        width: 8px;
+        height: 8px;
+        background: #2ecc71;
+        border-radius: 50%;
+        position: relative;
+      }
+
+      @keyframes glow {
+        0% {
+          box-shadow: 0 0 2px #2ecc71, 0 0 4px #2ecc71, 0 0 6px #2ecc71;
+        }
+        100% {
+          box-shadow: 0 0 4px #2ecc71, 0 0 8px #2ecc71, 0 0 12px #2ecc71;
+        }
+      }
+
+      .online-indicator {
+        animation: glow 1.5s ease-in-out infinite alternate;
+      }
+
+      /* Improved Messages */
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        scroll-behavior: smooth;
+      }
+
+      .message {
+        margin-bottom: 15px;
+        padding: 12px 15px;
+        border-radius: 15px;
+        max-width: 85%;
+        line-height: 1.4;
+        word-wrap: break-word;
+        position: relative;
+        transform-origin: left bottom;
+        will-change: transform, opacity;
+      }
+
+      @keyframes messageIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .message.bot {
+        background: white;
+        color: #333;
+        margin-right: auto;
+        border-bottom-left-radius: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        animation: messageIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      .message.user {
+        background: linear-gradient(135deg, #4a90e2, #357abd);
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 5px;
+        animation: messageIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      /* Enhanced Input Area */
+      .chat-input {
+        padding: 15px;
+        background: white;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .chat-input-container {
+        display: flex;
+        gap: 10px;
+      }
+
+      .chat-input input {
+        flex: 1;
+        padding: 12px 20px;
+        border: 2px solid #ddd;
+        border-radius: 25px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      .chat-input input:focus {
+        border-color: #4a90e2;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        transform: translateY(-1px);
+      }
+
+      /* Enhanced Send Button */
+      .chat-input button {
+        padding: 12px 25px;
+        background: linear-gradient(135deg, #4a90e2, #357abd);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        will-change: transform;
+      }
+
+      .chat-input button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+      }
+
+      /* Enhanced Scrollbar */
+      .chat-messages::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .chat-messages::-webkit-scrollbar-track {
+        background: rgba(241, 241, 241, 0.8);
+        border-radius: 3px;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(136, 136, 136, 0.5);
+        border-radius: 3px;
+        transition: background 0.3s ease;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: rgba(85, 85, 85, 0.8);
+      }
+
+      /* Glass Morphism Enhancement */
+      @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
+        .chat-container {
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+      }
+
+      /* ... (previous CSS remains the same until chat-close) ... */
+
+      /* Enhanced Close Button Style */
+      .chat-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+
+      .chat-close::before,
+      .chat-close::after {
+        content: "";
+        position: absolute;
+        width: 14px;
+        height: 2px;
+        background: white;
+        transition: all 0.3s ease;
+      }
+
+      .chat-close::before {
+        transform: rotate(45deg) scale(0.8);
+      }
+
+      .chat-close::after {
+        transform: rotate(-45deg) scale(0.8);
+      }
+
+      .chat-close:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: rotate(180deg) scale(1.1);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+
+      .chat-close:hover::before,
+      .chat-close:hover::after {
+        transform: rotate(45deg) scale(1);
+        background: white;
+      }
+
+      .chat-close:hover::after {
+        transform: rotate(-45deg) scale(1);
+      }
+
+      /* ... (previous CSS continues until the end) ... */
+
+      /* Mobile Optimization */
+      @media screen and (max-width: 768px) {
+        .chat-container {
+          width: 100%;
+          height: 100%;
+          bottom: 0;
+          right: 0;
+          border-radius: 0;
+          transform-origin: bottom right;
+        }
+
+        .chat-button {
+          bottom: 20px;
+          right: 20px;
+          width: 50px;
+          height: 50px;
+          font-size: 20px;
+        }
+
+        .chat-header {
+          padding: 15px;
+          height: 60px;
+        }
+
+        .chat-input {
+          padding: 12px;
+          position: sticky;
+          bottom: 0;
+        }
+
+        .chat-input-container {
+          gap: 8px;
+        }
+
+        .chat-input input {
+          padding: 10px 15px;
+          font-size: 16px; /* Better for mobile touch */
+        }
+
+        .chat-input button {
+          padding: 10px 20px;
+          font-size: 14px;
+        }
+
+        .message {
+          max-width: 90%;
+          padding: 10px 12px;
+          font-size: 14px;
+        }
+
+        /* Safe area handling for modern devices */
+        @supports (padding: max(0px)) {
+          .chat-container {
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            padding-left: env(safe-area-inset-left, 0);
+            padding-right: env(safe-area-inset-right, 0);
+          }
+
+          .chat-input {
+            padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+          }
+
+          .chat-button {
+            bottom: max(20px, env(safe-area-inset-bottom, 20px));
+            right: max(20px, env(safe-area-inset-right, 20px));
+          }
+        }
+      }
+
+      /* Additional Mobile Landscape Optimization */
+      @media screen and (max-height: 500px) and (orientation: landscape) {
+        .chat-container {
+          height: 100vh;
+          max-height: 100vh;
+        }
+
+        .chat-header {
+          height: 50px;
+          padding: 10px 15px;
+        }
+
+        .chat-input {
+          padding: 8px;
+        }
+
+        .message {
+          margin-bottom: 8px;
+          font-size: 13px;
+        }
+      }
+
+      /* Ensure smooth transitions on mobile */
+      @media (hover: none) and (pointer: coarse) {
+        .chat-button:hover {
+          transform: none;
+        }
+
+        .chat-close:hover {
+          transform: none;
+          background: rgba(255, 255, 255, 0.25);
+        }
+
+        .chat-input button:active {
+          transform: scale(0.95);
+        }
+      }
+
+      /* Prevent scrolling on iOS when chat is open */
+      .chat-container.active ~ body {
+        position: fixed;
+        width: 100%;
+      }
+
+      /* Better tap targets for mobile */
+      @media (hover: none) {
+        .chat-input button,
+        .chat-close {
+          min-height: 44px; /* Apple's recommended minimum */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-content">
+      <h1>Chào mừng đến với Website của chúng tôi</h1>
+      <p>
+        Đây là nội dung chính của website. Bạn có thể thêm các thông tin sản
+        phẩm, dịch vụ tại đây.
+      </p>
+    </div>
+
+    <div class="chat-button ripple">💬</div>
+
+    <div class="chat-container">
+      <div class="chat-header">
+        <div class="chat-header-title">
+          <div class="online-indicator"></div>
+          Hỗ trợ trực tuyến
+        </div>
+        <button class="close-button">✕</button>
+      </div>
+      <div class="chat-messages">
+        <div class="message bot">Xin chào! Tôi có thể giúp gì cho bạn? 😊</div>
+      </div>
+      <div class="chat-input">
+        <div class="chat-input-container">
+          <input type="text" placeholder="Nhập câu hỏi của bạn..." />
+          <button class="ripple">Gửi</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const chatButton = document.querySelector(".chat-button");
+      const chatContainer = document.querySelector(".chat-container");
+      const closeButton = document.querySelector(".close-button");
+      const input = document.querySelector("input");
+      const button = document.querySelector(".chat-input button");
+
+      const chatResponses = {
+        giá: "Các sản phẩm của chúng tôi có giá từ 100,000đ đến 1,000,000đ tùy loại. Bạn quan tâm đến sản phẩm nào? 💰",
+        "sản phẩm":
+          "Chúng tôi có nhiều loại sản phẩm khác nhau. Bạn có thể cho biết bạn đang tìm kiếm sản phẩm gì không? 🛍️",
+        "khuyến mãi":
+          "Hiện tại chúng tôi đang có chương trình giảm giá 20% cho tất cả sản phẩm mới! 🎉",
+        "địa chỉ":
+          "Cửa hàng chúng tôi đặt tại 123 Đường ABC, Quận XYZ, Thành phố HCM. 🏪",
+        "liên hệ":
+          "Bạn có thể liên hệ với chúng tôi qua số điện thoại: 0123456789 hoặc email: info@example.com 📞",
+        "chất lượng":
+          "Tất cả sản phẩm của chúng tôi đều được bảo hành 12 tháng và có chứng nhận chất lượng. ✨",
+        "giao hàng":
+          "Chúng tôi giao hàng miễn phí trong nội thành và thời gian giao hàng từ 2-3 ngày. 🚚",
+      };
+
+      let isChatOpen = false;
+
+      function toggleChat() {
+        isChatOpen = !isChatOpen;
+        chatContainer.classList.toggle("active");
+        chatButton.style.transform = isChatOpen ? "scale(0)" : "scale(1)";
+        if (isChatOpen) {
+          input.focus();
+        }
+      }
+
+      chatButton.addEventListener("click", toggleChat);
+      closeButton.addEventListener("click", toggleChat);
+
+      // Thêm hiệu ứng ripple
+      document.querySelectorAll(".ripple").forEach((button) => {
+        button.addEventListener("click", function (e) {
+          const ripple = document.createElement("span");
+          const rect = this.getBoundingClientRect();
+          const size = Math.max(rect.width, rect.height);
+          const x = e.clientX - rect.left - size / 2;
+          const y = e.clientY - rect.top - size / 2;
+
+          ripple.style.width = ripple.style.height = `${size}px`;
+          ripple.style.left = `${x}px`;
+          ripple.style.top = `${y}px`;
+
+          this.appendChild(ripple);
+
+          setTimeout(() => ripple.remove(), 600);
+        });
+      });
+
+      function addMessage(message, isUser = false) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message");
+        messageDiv.classList.add(isUser ? "user" : "bot");
+        messageDiv.textContent = message;
+        document.querySelector(".chat-messages").appendChild(messageDiv);
+        messageDiv.scrollIntoView({ behavior: "smooth" });
+      }
+
+      function getBotResponse(message) {
+        message = message.toLowerCase();
+        for (let key in chatResponses) {
+          if (message.includes(key)) {
+            return chatResponses[key];
+          }
+        }
+        return "Xin lỗi, tôi không hiểu câu hỏi của bạn. Bạn có thể hỏi về giá cả, sản phẩm, khuyến mãi, địa chỉ, liên hệ, chất lượng hoặc giao hàng. 🤔";
+      }
+
+      function handleMessage() {
+        const message = input.value.trim();
+        if (message) {
+          addMessage(message, true);
+          input.value = "";
+
+          setTimeout(() => {
+            const response = getBotResponse(message);
+            addMessage(response);
+          }, 500);
+        }
+      }
+
+      button.addEventListener("click", handleMessage);
+      input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          handleMessage();
+        }
+      });
+    </script>
+  </body>
+</html>
